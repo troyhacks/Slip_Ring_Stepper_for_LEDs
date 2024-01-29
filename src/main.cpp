@@ -22,6 +22,7 @@ const uint8_t REPLY_DELAY = 2;
 const long SERIAL_BAUD_RATE = 115200;
 const int RX_PIN = 26;
 const int TX_PIN = 25;
+const int HW_DISABLE_PIN = 19;
 
 void setup() {
 
@@ -75,7 +76,7 @@ void setup() {
   
   Serial.println();
 
-  stepper_driver_0.setHardwareEnablePin(15);                                                  
+  stepper_driver_0.setHardwareEnablePin(HW_DISABLE_PIN);                  
   stepper_driver_0.setRunCurrent(5); // percent %
   stepper_driver_0.setHoldCurrent(5); // percent %
   stepper_driver_0.disableCoolStep();    
@@ -86,7 +87,7 @@ void setup() {
   // stepper_driver_0.enableInverseMotorDirection();
   stepper_driver_0.enable();
 
-  stepper_driver_1.setHardwareEnablePin(15);                                                  
+  stepper_driver_1.setHardwareEnablePin(HW_DISABLE_PIN);                                                  
   stepper_driver_1.setRunCurrent(5); // percent %
   stepper_driver_1.setHoldCurrent(5); // percent %
   stepper_driver_1.disableCoolStep();    
@@ -97,7 +98,7 @@ void setup() {
   // stepper_driver_1.enableInverseMotorDirection();
   stepper_driver_1.enable();
 
-  stepper_driver_2.setHardwareEnablePin(15);                                                  
+  stepper_driver_2.setHardwareEnablePin(HW_DISABLE_PIN);                                                  
   stepper_driver_2.setRunCurrent(5); // percent %
   stepper_driver_2.setHoldCurrent(5); // percent %
   stepper_driver_2.disableCoolStep();    
@@ -108,7 +109,7 @@ void setup() {
   // stepper_driver_2.enableInverseMotorDirection();
   stepper_driver_2.enable();
 
-  stepper_driver_3.setHardwareEnablePin(15);                                                  
+  stepper_driver_3.setHardwareEnablePin(HW_DISABLE_PIN);                                                  
   stepper_driver_3.setRunCurrent(5); // percent %
   stepper_driver_3.setHoldCurrent(5); // percent %
   stepper_driver_3.disableCoolStep();    
@@ -136,6 +137,12 @@ int run = 1;
 float currentrev = 0;
 int speed = 0;
 int rotation = 0;
+int steps = 0;
+
+long motor0steps = 0;
+long motor1steps = 0;
+long motor2steps = 0;
+long motor3steps = 0;
 
 void loop() {
 
@@ -144,20 +151,106 @@ void loop() {
     delay(random(500,2000));
 
     speed = totalsteps*random(1,8);
-    run = random(1,3);
-    rotation = random(1,5);
+    run = random(1,5);
+    rotation = random(1,3);
     rotation = totalsteps/4*rotation;
+    steps = rotation*run;
     stepper.setSpeedInStepsPerSecond(speed);
-    Serial.println(speed);
-    stepper.setTargetPositionRelativeInSteps(rotation*run*dir);
+    int spin = random(0,4);
 
-    if (random(0,2)) {
-      Serial.println("Direction reversing!");
-      dir *= -1;
-    } else {
-      Serial.println("Not reversing.");
+    if (spin == 0) {
+      stepper_driver_0.enableInverseMotorDirection();
+      stepper_driver_1.enableInverseMotorDirection();
+      stepper_driver_2.enableInverseMotorDirection();
+      stepper_driver_3.enableInverseMotorDirection();
+      motor0steps -= steps;
+      motor1steps -= steps;
+      motor2steps -= steps;
+      motor3steps -= steps;
+    } else if (spin == 1) {
+      stepper_driver_0.disableInverseMotorDirection();
+      stepper_driver_1.disableInverseMotorDirection();
+      stepper_driver_2.disableInverseMotorDirection();
+      stepper_driver_3.disableInverseMotorDirection();
+      motor0steps += steps;
+      motor1steps += steps;
+      motor2steps += steps;
+      motor3steps += steps;
+    } else if (spin == 2) {
+      stepper_driver_0.enableInverseMotorDirection();
+      stepper_driver_1.disableInverseMotorDirection();
+      stepper_driver_2.disableInverseMotorDirection();
+      stepper_driver_3.enableInverseMotorDirection();
+      motor0steps -= steps;
+      motor1steps += steps;
+      motor2steps += steps;
+      motor3steps -= steps;
+    } else if (spin == 3) {
+      stepper_driver_0.disableInverseMotorDirection();
+      stepper_driver_1.enableInverseMotorDirection();
+      stepper_driver_2.enableInverseMotorDirection();
+      stepper_driver_3.disableInverseMotorDirection();
+      motor0steps += steps;
+      motor1steps -= steps;
+      motor2steps -= steps;
+      motor3steps += steps;
     }
+    
+    // } else if (spin == 4) {
+
+    //   stepper_driver_0.disableInverseMotorDirection();
+    //   stepper_driver_1.disableInverseMotorDirection();
+    //   stepper_driver_2.disableInverseMotorDirection();
+    //   stepper_driver_3.disableInverseMotorDirection();
+
+    //   stepper_driver_0.disable();
+    //   stepper_driver_1.disable();
+    //   stepper_driver_2.disable();
+    //   stepper_driver_3.disable();
+
+    //   stepper_driver_0.enable();
+    //   stepper.setTargetPositionRelativeInSteps(motor0steps*-1);
+    //   if (!stepper.motionComplete()) { }
+    //   stepper_driver_0.disable();
+
+    //   stepper_driver_1.enable();
+    //   stepper.setTargetPositionRelativeInSteps(motor1steps*-1);
+    //   if (!stepper.motionComplete()) { }
+    //   stepper_driver_1.disable();
+
+    //   stepper_driver_2.enable();
+    //   stepper.setTargetPositionRelativeInSteps(motor2steps*-1);
+    //   if (!stepper.motionComplete()) { }
+    //   stepper_driver_2.disable();
+
+    //   stepper_driver_3.enable();
+    //   stepper.setTargetPositionRelativeInSteps(motor3steps*-1);
+    //   if (!stepper.motionComplete()) { }
+    //   stepper_driver_3.disable();
+
+    //   stepper_driver_0.enable();
+    //   stepper_driver_1.enable();
+    //   stepper_driver_2.enable();
+    //   stepper_driver_3.enable();
+
+    //   motor0steps = 0;
+    //   motor1steps = 0;
+    //   motor2steps = 0;
+    //   motor3steps = 0;
+
+    // }
+
+    motor0steps = motor0steps % totalsteps;
+    motor1steps = motor1steps % totalsteps;
+    motor2steps = motor2steps % totalsteps;
+    motor3steps = motor3steps % totalsteps;
+
+    Serial.printf("Speed = %d, Rotation = %d, Run = %d, Steps = %d Spin Style = %d\n", speed, rotation, run, steps, spin);
+    Serial.printf("m0 = %d, m1 = %d, m2 = %d, m3 = %d\n", motor0steps, motor1steps, motor2steps, motor3steps);
+    
+    stepper.setTargetPositionRelativeInSteps(steps*dir);
 
   }
+
 }
 
