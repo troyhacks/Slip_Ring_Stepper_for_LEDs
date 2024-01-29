@@ -1,86 +1,163 @@
 #include <Arduino.h>
-#include <SmoothStepper.h>
-#include <FastLED.h>
-#define NUM_LEDS 64
+#include <TMC2209.h>
+#include <ESP_FlexyStepper.h>
+// #include <FastLED.h>
+#define NUM_LEDS 128
 
-int totalsteps = 200;
+int totalsteps = 200*8;
 
-// dir = 21
-// step = 22
+ESP_FlexyStepper stepper;
 
-SmoothStepper stepper(totalsteps,22,19,23,18);
+TMC2209 stepper_driver_0;
+const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
+TMC2209 stepper_driver_1;
+const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+TMC2209 stepper_driver_2;
+const TMC2209::SerialAddress SERIAL_ADDRESS_2 = TMC2209::SERIAL_ADDRESS_2;
+TMC2209 stepper_driver_3;
+const TMC2209::SerialAddress SERIAL_ADDRESS_3 = TMC2209::SERIAL_ADDRESS_3;
 
-CRGB rawleds[NUM_LEDS];
-CRGBSet leds(rawleds, NUM_LEDS);
+const uint8_t REPLY_DELAY = 2;
 
-CRGBSet row1(leds(0,7));
-CRGBSet row2(leds(8,15));
-CRGBSet row3(leds(16,23));
-CRGBSet row4(leds(24,31));
-CRGBSet row5(leds(32,39));
-CRGBSet row6(leds(40,47));
-CRGBSet row7(leds(48,55));
-CRGBSet row8(leds(56,63));
-
-int bright = 255;
-int hue = 0;
-
-struct CRGB * rows[] = { row1,row2,row3,row4,row5,row6,row7,row8 };
+const long SERIAL_BAUD_RATE = 115200;
+const int RX_PIN = 26;
+const int TX_PIN = 25;
 
 void setup() {
 
+  Serial2.begin(SERIAL_BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
+
+  stepper_driver_0.setup(Serial2, SERIAL_BAUD_RATE, SERIAL_ADDRESS_0);
+  stepper_driver_0.setReplyDelay(REPLY_DELAY);
+
+  delay(100);
+
+  stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE, SERIAL_ADDRESS_1);
+  stepper_driver_1.setReplyDelay(REPLY_DELAY);
+
+  delay(100);
+
+  stepper_driver_2.setup(Serial2, SERIAL_BAUD_RATE, SERIAL_ADDRESS_2);
+  stepper_driver_2.setReplyDelay(REPLY_DELAY);
+
+  delay(100);
+
+  stepper_driver_3.setup(Serial2, SERIAL_BAUD_RATE, SERIAL_ADDRESS_3);
+  stepper_driver_3.setReplyDelay(REPLY_DELAY);
+
   Serial.begin(115200);
+
+  delay(100);
+
+  if(stepper_driver_0.isSetupAndCommunicating()) {
+    Serial.println("Motor 0 = OK");
+  } else {
+    Serial.println("Motor 0 = BAD");
+  }
+
+  if(stepper_driver_1.isSetupAndCommunicating()) {
+    Serial.println("Motor 1 = OK");
+  } else {
+    Serial.println("Motor 1 = BAD");
+  }
+
+  if(stepper_driver_2.isSetupAndCommunicating()) {
+    Serial.println("Motor 2 = OK");
+  } else {
+    Serial.println("Motor 2 = BAD");
+  }
+
+  if(stepper_driver_3.isSetupAndCommunicating()) {
+    Serial.println("Motor 3 = OK");
+  } else {
+    Serial.println("Motor 3 = BAD");
+  }
   
-  disableCore0WDT();
+  Serial.println();
 
-  FastLED.addLeds<NEOPIXEL, 21>(leds, NUM_LEDS);
+  stepper_driver_0.setHardwareEnablePin(15);                                                  
+  stepper_driver_0.setRunCurrent(5); // percent %
+  stepper_driver_0.setHoldCurrent(5); // percent %
+  stepper_driver_0.disableCoolStep();    
+  stepper_driver_0.disableStealthChop();
+  stepper_driver_0.disableAutomaticGradientAdaptation();
+  stepper_driver_0.disableAutomaticCurrentScaling(); 
+  stepper_driver_0.setMicrostepsPerStep(8);
+  // stepper_driver_0.enableInverseMotorDirection();
+  stepper_driver_0.enable();
 
-  stepper.accelerationEnable(10, 265, 2000);
-  stepper.begin();
+  stepper_driver_1.setHardwareEnablePin(15);                                                  
+  stepper_driver_1.setRunCurrent(5); // percent %
+  stepper_driver_1.setHoldCurrent(5); // percent %
+  stepper_driver_1.disableCoolStep();    
+  stepper_driver_1.disableStealthChop();
+  stepper_driver_1.disableAutomaticGradientAdaptation();
+  stepper_driver_1.disableAutomaticCurrentScaling(); 
+  stepper_driver_1.setMicrostepsPerStep(8);
+  // stepper_driver_1.enableInverseMotorDirection();
+  stepper_driver_1.enable();
+
+  stepper_driver_2.setHardwareEnablePin(15);                                                  
+  stepper_driver_2.setRunCurrent(5); // percent %
+  stepper_driver_2.setHoldCurrent(5); // percent %
+  stepper_driver_2.disableCoolStep();    
+  stepper_driver_2.disableStealthChop();
+  stepper_driver_2.disableAutomaticGradientAdaptation();
+  stepper_driver_2.disableAutomaticCurrentScaling(); 
+  stepper_driver_2.setMicrostepsPerStep(8);
+  // stepper_driver_2.enableInverseMotorDirection();
+  stepper_driver_2.enable();
+
+  stepper_driver_3.setHardwareEnablePin(15);                                                  
+  stepper_driver_3.setRunCurrent(5); // percent %
+  stepper_driver_3.setHoldCurrent(5); // percent %
+  stepper_driver_3.disableCoolStep();    
+  stepper_driver_3.disableStealthChop();
+  stepper_driver_3.disableAutomaticGradientAdaptation();
+  stepper_driver_3.disableAutomaticCurrentScaling(); 
+  stepper_driver_3.setMicrostepsPerStep(8);
+  // stepper_driver_3.enableInverseMotorDirection();
+  stepper_driver_3.enable();
+
+  stepper.connectToPins(22,21); // step, dir
+  stepper.setStepsPerRevolution(totalsteps);
+  stepper.setSpeedInStepsPerSecond(200*8*10);
+  stepper.setAccelerationInStepsPerSecondPerSecond(6*totalsteps);
+  stepper.setDecelerationInStepsPerSecondPerSecond(6*totalsteps);
+  stepper.startAsService(0);
+
+  delay(500);
 
 }
 
+int timedelay = 0;
 int dir = 1;
-
-CHSV getRotationHue(int offset=0) {
-
-  int stepholder = stepper.whatStepNumber() % totalsteps;
-  hue = map(stepholder,0,199,0,255);
-  CHSV hsvval(hue+offset,255,bright);
-  return hsvval;
-
-}
+int run = 1;
+float currentrev = 0;
+int speed = 0;
+int rotation = 0;
 
 void loop() {
 
-  fill_solid(rows[0]+0,1,getRotationHue(0));
-  fill_solid(rows[1]+1,1,getRotationHue(0));
-  fill_solid(rows[2]+2,1,getRotationHue(0));
-  fill_solid(rows[3]+3,1,getRotationHue(0));
-  FastLED.show();
+  if (stepper.motionComplete()) {
 
-  fill_solid(rows[0]+7,1,getRotationHue(64));
-  fill_solid(rows[1]+6,1,getRotationHue(64));
-  fill_solid(rows[2]+5,1,getRotationHue(64));
-  fill_solid(rows[3]+4,1,getRotationHue(64));
-  FastLED.show();
+    delay(random(500,2000));
 
-  fill_solid(rows[4]+4,1,getRotationHue(128));
-  fill_solid(rows[5]+5,1,getRotationHue(128));
-  fill_solid(rows[6]+6,1,getRotationHue(128));
-  fill_solid(rows[7]+7,1,getRotationHue(128));
-  FastLED.show();
+    speed = totalsteps*random(1,8);
+    run = random(1,3);
+    rotation = random(1,5);
+    rotation = totalsteps/4*rotation;
+    stepper.setSpeedInStepsPerSecond(speed);
+    Serial.println(speed);
+    stepper.setTargetPositionRelativeInSteps(rotation*run*dir);
 
-  fill_solid(rows[7]+0,1,getRotationHue(192));
-  fill_solid(rows[6]+1,1,getRotationHue(192));
-  fill_solid(rows[5]+2,1,getRotationHue(192));
-  fill_solid(rows[4]+3,1,getRotationHue(192));
-  FastLED.show();
+    if (random(0,2)) {
+      Serial.println("Direction reversing!");
+      dir *= -1;
+    } else {
+      Serial.println("Not reversing.");
+    }
 
-  if (stepper.isArrived()) {
-    stepper.step(totalsteps*dir*60);
-    dir *= -1;
   }
-
 }
 
