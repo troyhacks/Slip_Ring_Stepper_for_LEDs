@@ -148,12 +148,29 @@ long motor1steps = 0;
 long motor2steps = 0;
 long motor3steps = 0;
 
+bool stopatzero = false;
+
 void loop() {
+
+  if (digitalRead(0) == LOW) {
+    Serial.println("Will stop at next all-zero state.");
+    stopatzero = true;
+  }
 
   if (stepper.motionComplete()) {
 
     Serial.printf("m0 = %d, m1 = %d, m2 = %d, m3 = %d\n", motor0steps, motor1steps, motor2steps, motor3steps);
     
+    if (stopatzero) {
+      if (motor0steps == 0 && motor0steps == motor1steps && motor1steps == motor2steps && motor2steps == motor3steps) {
+        Serial.println("Stopping at zero!");
+        while (digitalRead(0) == HIGH) {
+          // noop
+        }
+        stopatzero = false;
+      }
+    } 
+
     delay(random(500,2000)); // how long to pause once we get to the position.
 
     speed = totalsteps*random(1,8); // max speed is also influenced by accelleration config!
