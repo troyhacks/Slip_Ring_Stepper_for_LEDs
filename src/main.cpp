@@ -14,6 +14,7 @@ ESP_FlexyStepper stepper;
 // SERIAL_ADDRESS_3 = MC1=3.3v MC2=3.3v
 
 enum{MOTOR_COUNT=4};
+
 TMC2209 stepper_drivers[MOTOR_COUNT];
 
 TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
@@ -40,6 +41,7 @@ void setup() {
   Serial2.begin(SERIAL_BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
 
   for (size_t motor_index=0; motor_index<MOTOR_COUNT; motor_index++) {
+
     stepper_drivers[motor_index].setup(Serial2, SERIAL_BAUD_RATE, *(serial_addesses[motor_index]));
     stepper_drivers[motor_index].setReplyDelay(REPLY_DELAY);
     stepper_drivers[motor_index].setHardwareEnablePin(HW_DISABLE_PIN);                  
@@ -51,7 +53,9 @@ void setup() {
     stepper_drivers[motor_index].disableAutomaticCurrentScaling(); 
     stepper_drivers[motor_index].setMicrostepsPerStep(microsteps);
     stepper_drivers[motor_index].enable();
+
     delay(100); // important for first inits.
+
   }
 
   Serial.begin(115200);
