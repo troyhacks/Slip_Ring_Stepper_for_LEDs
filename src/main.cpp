@@ -8,10 +8,10 @@ const int totalsteps = 200*microsteps; // 200 revolutions and we set 8 microstep
 ESP_FlexyStepper stepper;
 
 // The "address" is 2-bit and set with the MS1 and MS2 pins set to 3.3v.
-// SERIAL_ADDRESS_0 = MC1=NC, MC2=NC
-// SERIAL_ADDRESS_1 = MC1=3.3v, MC2=NC
-// SERIAL_ADDRESS_2 = MC1=NC, MC2=3.3v
-// SERIAL_ADDRESS_3 = MC1=3.3v, MC2=3.3v
+// SERIAL_ADDRESS_0 = MC1=NC   MC2=NC
+// SERIAL_ADDRESS_1 = MC1=3.3v MC2=NC
+// SERIAL_ADDRESS_2 = MC1=NC   MC2=3.3v
+// SERIAL_ADDRESS_3 = MC1=3.3v MC2=3.3v
 
 TMC2209 stepper_driver_0;
 const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
@@ -133,7 +133,7 @@ void setup() {
   stepper.setDecelerationInStepsPerSecondPerSecond(6*totalsteps);
   stepper.startAsService(0);
 
-  delay(500);
+  delay(1500); // in case the board resets during programming.
 
 }
 
@@ -155,18 +155,20 @@ void loop() {
   if (digitalRead(0) == LOW) {
     Serial.println("Will stop at next all-zero state.");
     stopatzero = true;
+    delay(1000);
   }
 
   if (stepper.motionComplete()) {
 
-    Serial.printf("m0 = %d, m1 = %d, m2 = %d, m3 = %d\n", motor0steps, motor1steps, motor2steps, motor3steps);
-    
+    Serial.printf("Arrived at: m0 = %d, m1 = %d, m2 = %d, m3 = %d\n", motor0steps, motor1steps, motor2steps, motor3steps);
+
     if (stopatzero) {
       if (motor0steps == 0 && motor0steps == motor1steps && motor1steps == motor2steps && motor2steps == motor3steps) {
-        Serial.println("Stopping at zero!");
+        Serial.println("Stopping at zero! Press the button again to restart.");
         while (digitalRead(0) == HIGH) {
           // noop
         }
+        Serial.println("Resuming stepping.");
         stopatzero = false;
       }
     } 
@@ -179,9 +181,73 @@ void loop() {
     rotation = totalsteps/4*rotation; // 90° or 180° moves, make it /8 for 45° increment moves
     steps = rotation*run; // 90° or 180° done 1..4 times.
     stepper.setSpeedInStepsPerSecond(speed);
+    bool homev1 = true;
 
     int spin = random(0,4); // pick a random spin pattern
 
+    if (stopatzero) {
+      
+      if (abs(motor0steps) == abs(motor1steps) || abs(motor0steps) + abs(motor1steps) == totalsteps) {
+        
+        delay(1000);
+
+        Serial.println("Trying to step to home!");
+
+        stepper_driver_0.disableInverseMotorDirection();
+        stepper_driver_1.disableInverseMotorDirection();
+        stepper_driver_2.disableInverseMotorDirection();
+        stepper_driver_3.disableInverseMotorDirection();
+
+        if (abs(motor0steps) == abs(motor1steps)) {
+          
+          homev1 = true;
+          steps = totalsteps-abs(motor0steps);
+
+        } else {
+          
+          homev1 = false;
+          steps = totalsteps-abs(motor0steps);
+
+        }
+
+        if (motor0steps < 0) {
+          stepper_driver_0.enableInverseMotorDirection();
+        }
+        
+        if (motor1steps < 0 && homev1 || motor1steps > 0 && !homev1) {
+          stepper_driver_1.enableInverseMotorDirection();
+        }
+
+        if (motor2steps < 0 && homev1 || motor2steps > 0 && !homev1) {
+          stepper_driver_2.enableInverseMotorDirection();
+        }
+
+        if (motor3steps < 0) {
+          stepper_driver_3.enableInverseMotorDirection();
+        }
+
+        motor0steps = 0;
+        motor1steps = 0;
+        motor2steps = 0;
+        motor3steps = 0;
+
+        spin = -1;
+
+      } else {
+        
+        Serial.println("Can't calculate a 1-step solution to home.");
+
+        // No known 1-step solution. Let's just kick everything 90°
+        //
+        run = 1; // one run
+        rotation = 1;
+        rotation = totalsteps/4*rotation; // 90°
+        steps = rotation*run; // move 90° once
+
+      }
+    
+    }
+    
     if (spin == 0) {
 
       stepper_driver_0.enableInverseMotorDirection();
@@ -230,56 +296,12 @@ void loop() {
       motor2steps -= steps;
       motor3steps += steps;
 
-    }// else if (spin == 4) {
+    }
 
-    //   // "spin == 4" doesn't work as expected. Intended as a "go to home" function.
-    //   // Could likey by enabling all the motors by driving the hardware pin to ground
-    //   // but that comes with some other consequences.
-
-    //   stepper_driver_0.disableInverseMotorDirection();
-    //   stepper_driver_1.disableInverseMotorDirection();
-    //   stepper_driver_2.disableInverseMotorDirection();
-    //   stepper_driver_3.disableInverseMotorDirection();
-
-    //   stepper_driver_0.disable();
-    //   stepper_driver_1.disable();
-    //   stepper_driver_2.disable();
-    //   stepper_driver_3.disable();
-
-    //   stepper_driver_0.enable();
-    //   stepper.setTargetPositionRelativeInSteps(motor0steps*-1);
-    //   if (!stepper.motionComplete()) { }
-    //   stepper_driver_0.disable();
-
-    //   stepper_driver_1.enable();
-    //   stepper.setTargetPositionRelativeInSteps(motor1steps*-1);
-    //   if (!stepper.motionComplete()) { }
-    //   stepper_driver_1.disable();
-
-    //   stepper_driver_2.enable();
-    //   stepper.setTargetPositionRelativeInSteps(motor2steps*-1);
-    //   if (!stepper.motionComplete()) { }
-    //   stepper_driver_2.disable();
-
-    //   stepper_driver_3.enable();
-    //   stepper.setTargetPositionRelativeInSteps(motor3steps*-1);
-    //   if (!stepper.motionComplete()) { }
-    //   stepper_driver_3.disable();
-
-    //   stepper_driver_0.enable();
-    //   stepper_driver_1.enable();
-    //   stepper_driver_2.enable();
-    //   stepper_driver_3.enable();
-
-    //   motor0steps = 0;
-    //   motor1steps = 0;
-    //   motor2steps = 0;
-    //   motor3steps = 0;
-
-    // }
-
+    Serial.printf("Moving to:  m0 = %d, m1 = %d, m2 = %d, m3 = %d\n", motor0steps, motor1steps, motor2steps, motor3steps);
+    
     // Keep track of the steps back to 0, rather than the total steps which may just increase forever.
-    // This isn't really used anywhere at the moment.
+    // This is used for homing.
     //
     motor0steps = motor0steps % totalsteps;
     motor1steps = motor1steps % totalsteps;
@@ -288,10 +310,7 @@ void loop() {
 
     Serial.printf("Speed = %d, Rotation = %d, Run = %d, Steps = %d, Spin Style = %d\n", speed, rotation, run, steps, spin);
     
-    // "dir" is used here mostly for FlexyStepper to keep track of steps
-    // as the rotation is handled by the driver board, not the direction pin.
-    //
-    stepper.setTargetPositionRelativeInSteps(steps*dir);
+    stepper.setTargetPositionRelativeInSteps(steps);
 
   }
 
