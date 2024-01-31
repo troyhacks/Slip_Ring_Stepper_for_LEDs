@@ -13,14 +13,20 @@ ESP_FlexyStepper stepper;
 // SERIAL_ADDRESS_2 = MC1=NC   MC2=3.3v
 // SERIAL_ADDRESS_3 = MC1=3.3v MC2=3.3v
 
-TMC2209 stepper_driver_0;
-const TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
-TMC2209 stepper_driver_1;
-const TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
-TMC2209 stepper_driver_2;
-const TMC2209::SerialAddress SERIAL_ADDRESS_2 = TMC2209::SERIAL_ADDRESS_2;
-TMC2209 stepper_driver_3;
-const TMC2209::SerialAddress SERIAL_ADDRESS_3 = TMC2209::SERIAL_ADDRESS_3;
+enum{MOTOR_COUNT=4};
+TMC2209 stepper_drivers[MOTOR_COUNT];
+
+TMC2209::SerialAddress SERIAL_ADDRESS_0 = TMC2209::SERIAL_ADDRESS_0;
+TMC2209::SerialAddress SERIAL_ADDRESS_1 = TMC2209::SERIAL_ADDRESS_1;
+TMC2209::SerialAddress SERIAL_ADDRESS_2 = TMC2209::SERIAL_ADDRESS_2;
+TMC2209::SerialAddress SERIAL_ADDRESS_3 = TMC2209::SERIAL_ADDRESS_3;
+
+TMC2209::SerialAddress * serial_addesses[MOTOR_COUNT] = {
+  &SERIAL_ADDRESS_0,
+  &SERIAL_ADDRESS_1,
+  &SERIAL_ADDRESS_2,
+  &SERIAL_ADDRESS_3
+};
 
 const uint8_t REPLY_DELAY = 2;
 
@@ -33,25 +39,20 @@ void setup() {
 
   Serial2.begin(SERIAL_BAUD_RATE, SERIAL_8N1, RX_PIN, TX_PIN);
 
-  stepper_driver_0.setup(Serial2, SERIAL_BAUD_RATE, SERIAL_ADDRESS_0);
-  stepper_driver_0.setReplyDelay(REPLY_DELAY);
-
-  delay(100); // Delay important. Doesn't init multiple motors via serial otherwise.
-
-  stepper_driver_1.setup(Serial2, SERIAL_BAUD_RATE, SERIAL_ADDRESS_1);
-  stepper_driver_1.setReplyDelay(REPLY_DELAY);
-
-  delay(100); // Delay important. Doesn't init multiple motors via serial otherwise.
-
-  stepper_driver_2.setup(Serial2, SERIAL_BAUD_RATE, SERIAL_ADDRESS_2);
-  stepper_driver_2.setReplyDelay(REPLY_DELAY);
-
-  delay(100); // Delay important. Doesn't init multiple motors via serial otherwise.
-
-  stepper_driver_3.setup(Serial2, SERIAL_BAUD_RATE, SERIAL_ADDRESS_3);
-  stepper_driver_3.setReplyDelay(REPLY_DELAY);
-
-  delay(100); // Just in case.
+  for (size_t motor_index=0; motor_index<MOTOR_COUNT; motor_index++) {
+    stepper_drivers[motor_index].setup(Serial2, SERIAL_BAUD_RATE, *(serial_addesses[motor_index]));
+    stepper_drivers[motor_index].setReplyDelay(REPLY_DELAY);
+    stepper_drivers[motor_index].setHardwareEnablePin(HW_DISABLE_PIN);                  
+    stepper_drivers[motor_index].setRunCurrent(5); // percent %
+    stepper_drivers[motor_index].setHoldCurrent(5); // percent %
+    stepper_drivers[motor_index].disableCoolStep();    
+    stepper_drivers[motor_index].disableStealthChop();
+    stepper_drivers[motor_index].disableAutomaticGradientAdaptation();
+    stepper_drivers[motor_index].disableAutomaticCurrentScaling(); 
+    stepper_drivers[motor_index].setMicrostepsPerStep(microsteps);
+    stepper_drivers[motor_index].enable();
+    delay(100); // important for first inits.
+  }
 
   Serial.begin(115200);
 
@@ -61,71 +62,17 @@ void setup() {
   // The driver boards need both 3.3v and motor power to return OK.
   // The "address" is 2-bit and set with the MS1 and MS2 pins set to 3.3v.
 
-  if (stepper_driver_0.isSetupAndCommunicating()) {
-    Serial.println("Motor 0 = OK");
-  } else {
-    Serial.println("Motor 0 = BAD");
+  for (size_t motor_index=0; motor_index<MOTOR_COUNT; motor_index++) {
+      Serial.print("Motor ");
+      Serial.print(motor_index);
+    if (stepper_drivers[motor_index].isSetupAndCommunicating()) {
+      Serial.println(" = OK");
+    } else {
+      Serial.println(" = BAD");
+    }
   }
 
-  if (stepper_driver_1.isSetupAndCommunicating()) {
-    Serial.println("Motor 1 = OK");
-  } else {
-    Serial.println("Motor 1 = BAD");
-  }
-
-  if (stepper_driver_2.isSetupAndCommunicating()) {
-    Serial.println("Motor 2 = OK");
-  } else {
-    Serial.println("Motor 2 = BAD");
-  }
-
-  if (stepper_driver_3.isSetupAndCommunicating()) {
-    Serial.println("Motor 3 = OK");
-  } else {
-    Serial.println("Motor 3 = BAD");
-  }
-  
   Serial.println();
-
-  stepper_driver_0.setHardwareEnablePin(HW_DISABLE_PIN);                  
-  stepper_driver_0.setRunCurrent(5); // percent %
-  stepper_driver_0.setHoldCurrent(5); // percent %
-  stepper_driver_0.disableCoolStep();    
-  stepper_driver_0.disableStealthChop();
-  stepper_driver_0.disableAutomaticGradientAdaptation();
-  stepper_driver_0.disableAutomaticCurrentScaling(); 
-  stepper_driver_0.setMicrostepsPerStep(microsteps);
-  stepper_driver_0.enable();
-
-  stepper_driver_1.setHardwareEnablePin(HW_DISABLE_PIN);                                                  
-  stepper_driver_1.setRunCurrent(5); // percent %
-  stepper_driver_1.setHoldCurrent(5); // percent %
-  stepper_driver_1.disableCoolStep();    
-  stepper_driver_1.disableStealthChop();
-  stepper_driver_1.disableAutomaticGradientAdaptation();
-  stepper_driver_1.disableAutomaticCurrentScaling(); 
-  stepper_driver_1.setMicrostepsPerStep(microsteps);
-  stepper_driver_1.enable();
-
-  stepper_driver_2.setHardwareEnablePin(HW_DISABLE_PIN);                                                  
-  stepper_driver_2.setRunCurrent(5); // percent %
-  stepper_driver_2.setHoldCurrent(5); // percent %
-  stepper_driver_2.disableCoolStep();    
-  stepper_driver_2.disableStealthChop();
-  stepper_driver_2.disableAutomaticGradientAdaptation();
-  stepper_driver_2.disableAutomaticCurrentScaling(); 
-  stepper_driver_2.setMicrostepsPerStep(microsteps);
-  stepper_driver_2.enable();
-
-  stepper_driver_3.setHardwareEnablePin(HW_DISABLE_PIN);                                                  
-  stepper_driver_3.setRunCurrent(5); // percent %
-  stepper_driver_3.setHoldCurrent(5); // percent %
-  stepper_driver_3.disableCoolStep();    
-  stepper_driver_3.disableStealthChop();
-  stepper_driver_3.disableAutomaticGradientAdaptation();
-  stepper_driver_3.disableAutomaticCurrentScaling(); 
-  stepper_driver_3.setMicrostepsPerStep(microsteps);
-  stepper_driver_3.enable();
 
   stepper.connectToPins(22,21); // step, dir - we're not using dir in this code though.
   stepper.setStepsPerRevolution(totalsteps);
@@ -149,6 +96,8 @@ long motor2steps = 0;
 long motor3steps = 0;
 
 bool stopatzero = false;
+bool homev1 = true;
+int spin = 0;
 
 void loop() {
 
@@ -160,17 +109,21 @@ void loop() {
 
   if (stepper.motionComplete()) {
 
-    Serial.printf("Arrived at: m0 = %d, m1 = %d, m2 = %d, m3 = %d\n", motor0steps, motor1steps, motor2steps, motor3steps);
-
     if (stopatzero) {
+
       if (motor0steps == 0 && motor0steps == motor1steps && motor1steps == motor2steps && motor2steps == motor3steps) {
+
         Serial.println("Stopping at zero! Press the button again to restart.");
+
         while (digitalRead(0) == HIGH) {
           // noop
         }
+
         Serial.println("Resuming stepping.");
         stopatzero = false;
+
       }
+
     } 
 
     delay(random(500,2000)); // how long to pause once we get to the position.
@@ -180,10 +133,10 @@ void loop() {
     rotation = random(1,3); // 1 or 2  
     rotation = totalsteps/4*rotation; // 90° or 180° moves, make it /8 for 45° increment moves
     steps = rotation*run; // 90° or 180° done 1..4 times.
-    stepper.setSpeedInStepsPerSecond(speed);
-    bool homev1 = true;
+    homev1 = true;
+    spin = random(0,4); // pick a random spin pattern
 
-    int spin = random(0,4); // pick a random spin pattern
+    stepper.setSpeedInStepsPerSecond(speed);
 
     if (stopatzero) {
       
@@ -193,10 +146,10 @@ void loop() {
 
         Serial.println("Trying to step to home!");
 
-        stepper_driver_0.disableInverseMotorDirection();
-        stepper_driver_1.disableInverseMotorDirection();
-        stepper_driver_2.disableInverseMotorDirection();
-        stepper_driver_3.disableInverseMotorDirection();
+        stepper_drivers[0].disableInverseMotorDirection();
+        stepper_drivers[1].disableInverseMotorDirection();
+        stepper_drivers[2].disableInverseMotorDirection();
+        stepper_drivers[3].disableInverseMotorDirection();
 
         if (abs(motor0steps) == abs(motor1steps)) {
           
@@ -211,19 +164,27 @@ void loop() {
         }
 
         if (motor0steps < 0) {
-          stepper_driver_0.enableInverseMotorDirection();
+
+          stepper_drivers[0].enableInverseMotorDirection();
+
         }
         
         if (motor1steps < 0 && homev1 || motor1steps > 0 && !homev1) {
-          stepper_driver_1.enableInverseMotorDirection();
+
+          stepper_drivers[1].enableInverseMotorDirection();
+
         }
 
         if (motor2steps < 0 && homev1 || motor2steps > 0 && !homev1) {
-          stepper_driver_2.enableInverseMotorDirection();
+
+          stepper_drivers[2].enableInverseMotorDirection();
+
         }
 
         if (motor3steps < 0) {
-          stepper_driver_3.enableInverseMotorDirection();
+
+          stepper_drivers[3].enableInverseMotorDirection();
+
         }
 
         motor0steps = 0;
@@ -237,7 +198,8 @@ void loop() {
         
         Serial.println("Can't calculate a 1-step solution to home.");
 
-        // No known 1-step solution. Let's just kick everything 90°
+        // No 1-step solution for an equal step count.
+        // Let's just kick everything 90° and hope it improves.
         //
         run = 1; // one run
         rotation = 1;
@@ -250,10 +212,10 @@ void loop() {
     
     if (spin == 0) {
 
-      stepper_driver_0.enableInverseMotorDirection();
-      stepper_driver_1.enableInverseMotorDirection();
-      stepper_driver_2.enableInverseMotorDirection();
-      stepper_driver_3.enableInverseMotorDirection();
+      stepper_drivers[0].enableInverseMotorDirection();
+      stepper_drivers[1].enableInverseMotorDirection();
+      stepper_drivers[2].enableInverseMotorDirection();
+      stepper_drivers[3].enableInverseMotorDirection();
 
       motor0steps -= steps;
       motor1steps -= steps;
@@ -262,10 +224,10 @@ void loop() {
 
     } else if (spin == 1) {
 
-      stepper_driver_0.disableInverseMotorDirection();
-      stepper_driver_1.disableInverseMotorDirection();
-      stepper_driver_2.disableInverseMotorDirection();
-      stepper_driver_3.disableInverseMotorDirection();
+      stepper_drivers[0].disableInverseMotorDirection();
+      stepper_drivers[1].disableInverseMotorDirection();
+      stepper_drivers[2].disableInverseMotorDirection();
+      stepper_drivers[3].disableInverseMotorDirection();
 
       motor0steps += steps;
       motor1steps += steps;
@@ -274,10 +236,10 @@ void loop() {
 
     } else if (spin == 2) {
 
-      stepper_driver_0.enableInverseMotorDirection();
-      stepper_driver_1.disableInverseMotorDirection();
-      stepper_driver_2.disableInverseMotorDirection();
-      stepper_driver_3.enableInverseMotorDirection();
+      stepper_drivers[0].enableInverseMotorDirection();
+      stepper_drivers[1].disableInverseMotorDirection();
+      stepper_drivers[2].disableInverseMotorDirection();
+      stepper_drivers[3].enableInverseMotorDirection();
 
       motor0steps -= steps;
       motor1steps += steps;
@@ -286,10 +248,10 @@ void loop() {
 
     } else if (spin == 3) {
 
-      stepper_driver_0.disableInverseMotorDirection();
-      stepper_driver_1.enableInverseMotorDirection();
-      stepper_driver_2.enableInverseMotorDirection();
-      stepper_driver_3.disableInverseMotorDirection();
+      stepper_drivers[0].disableInverseMotorDirection();
+      stepper_drivers[1].enableInverseMotorDirection();
+      stepper_drivers[2].enableInverseMotorDirection();
+      stepper_drivers[3].disableInverseMotorDirection();
 
       motor0steps += steps;
       motor1steps -= steps;
@@ -300,7 +262,8 @@ void loop() {
 
     Serial.printf("Moving to:  m0 = %d, m1 = %d, m2 = %d, m3 = %d\n", motor0steps, motor1steps, motor2steps, motor3steps);
     
-    // Keep track of the steps back to 0, rather than the total steps which may just increase forever.
+    // Keep track of the minimal steps back to 0, rather than 
+    // the total steps which may just increase forever.
     // This is used for homing.
     //
     motor0steps = motor0steps % totalsteps;
