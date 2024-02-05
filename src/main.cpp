@@ -70,7 +70,12 @@ void setup() {
       Serial.print("Motor ");
       Serial.print(motor_index);
     if (stepper_drivers[motor_index].isSetupAndCommunicating()) {
-      Serial.println(" = OK");
+      Serial.print(" = OK");
+      if (stepper_drivers[motor_index].hardwareDisabled()) {
+        Serial.println(" (hardware disabled)");
+      } else {
+        Serial.println();
+      }
     } else {
       Serial.println(" = BAD");
     }
