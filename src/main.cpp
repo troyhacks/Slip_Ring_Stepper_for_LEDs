@@ -8,10 +8,10 @@ const int totalsteps = 200*microsteps; // 200 revolutions and we set 8 microstep
 ESP_FlexyStepper stepper;
 
 // The "address" is 2-bit and set with the MS1 and MS2 pins set to 3.3v.
-// SERIAL_ADDRESS_0 = MC1=NC   MC2=NC
-// SERIAL_ADDRESS_1 = MC1=3.3v MC2=NC
-// SERIAL_ADDRESS_2 = MC1=NC   MC2=3.3v
-// SERIAL_ADDRESS_3 = MC1=3.3v MC2=3.3v
+// SERIAL_ADDRESS_0 = MS1=NC   MS2=NC
+// SERIAL_ADDRESS_1 = MS1=3.3v MS2=NC
+// SERIAL_ADDRESS_2 = MS1=NC   MS2=3.3v
+// SERIAL_ADDRESS_3 = MS1=3.3v MS2=3.3v
 
 enum{MOTOR_COUNT=4};
 
