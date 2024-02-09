@@ -35,6 +35,8 @@ const long SERIAL_BAUD_RATE = 115200;
 const int RX_PIN = 26;
 const int TX_PIN = 25;
 const int HW_DISABLE_PIN = 19;
+const int MOTOR_STEP = 22;
+const int MOTOR_DIR = 21; // This is NOT connected in this sketch and not technically needed, but the ESP32 will complain if you don't define it to a real pin.
 
 void setup() {
 
@@ -83,7 +85,7 @@ void setup() {
 
   Serial.println();
 
-  stepper.connectToPins(22,21); // step, dir - we're not using dir in this code though.
+  stepper.connectToPins(MOTOR_STEP, MOTOR_DIR); // step, dir - we're not using dir in this code though.
   stepper.setStepsPerRevolution(totalsteps);
   stepper.setAccelerationInStepsPerSecondPerSecond(6*totalsteps);
   stepper.setDecelerationInStepsPerSecondPerSecond(6*totalsteps);
