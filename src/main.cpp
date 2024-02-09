@@ -36,7 +36,7 @@ const int RX_PIN = 26;
 const int TX_PIN = 25;
 const int HW_DISABLE_PIN = 19;
 const int MOTOR_STEP = 22;
-const int MOTOR_DIR = 21; // This is NOT connected in this sketch and not technically needed, but the ESP32 will complain if you don't define it to a real pin.
+const int MOTOR_DIR = 21; // This is NOT connected in this sketch and not technically needed, but the ESP32 will complain to debug if you don't define it to a real pin.
 
 void setup() {
 
